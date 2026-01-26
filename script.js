@@ -1,36 +1,45 @@
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Use relative path to work with both user pages and project pages on GitHub Pages
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('./sw.js', { scope: './' })
             .then((registration) => {
-                console.log('Service Worker registered successfully:', registration.scope);
+                console.log('✅ Service Worker registered successfully:', registration.scope);
+                
                 // Check for updates
                 registration.addEventListener('updatefound', () => {
-                    console.log('New service worker found');
+                    console.log('🔄 New service worker found');
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('📦 New content available, please refresh');
+                        }
+                    });
                 });
             })
             .catch((error) => {
-                console.error('Service Worker registration failed:', error);
+                console.error('❌ Service Worker registration failed:', error);
             });
     });
-    
-    // Check if service worker is already controlling the page
-    if (navigator.serviceWorker.controller) {
-        console.log('Service Worker is controlling this page');
-    }
 }
 
 // Install PWA prompt
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('💡 Install prompt triggered');
     e.preventDefault();
     deferredPrompt = e;
     showInstallPrompt();
 });
 
+// Track if app was installed
+window.addEventListener('appinstalled', () => {
+    console.log('✅ PWA was installed');
+    deferredPrompt = null;
+});
+
 function showInstallPrompt() {
     const installBanner = document.createElement('div');
+    installBanner.id = 'install-banner';
     installBanner.style.cssText = `
         position: fixed;
         bottom: 20px;
@@ -46,9 +55,11 @@ function showInstallPrompt() {
         align-items: center;
         gap: 15px;
         animation: slideUp 0.5s ease;
+        flex-wrap: wrap;
+        max-width: 90%;
     `;
     installBanner.innerHTML = `
-        <span>Install Florytix app for better experience</span>
+        <span>📱 Install Florytix app for better experience</span>
         <button id="installBtn" style="background: white; color: #FF1493; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer;">Install</button>
         <button id="dismissBtn" style="background: transparent; color: white; border: 1px solid white; padding: 8px 15px; border-radius: 20px; font-weight: 600; cursor: pointer;">Later</button>
     `;
@@ -354,7 +365,6 @@ function checkout() {
         return;
     }
     
-    // Calculate delivery date (3-5 days from now)
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + Math.floor(Math.random() * 3) + 3);
     const formattedDate = deliveryDate.toLocaleDateString('en-US', { 
@@ -369,7 +379,6 @@ function checkout() {
         `Thank you for your order! Your beautiful flowers will be delivered by ${formattedDate}. We appreciate your business! ✿`
     );
     
-    // Clear cart after checkout
     setTimeout(() => {
         cart = [];
         saveCart();
@@ -379,11 +388,9 @@ function checkout() {
 
 // Custom alert
 function showCustomAlert(title, message) {
-    // Create overlay
     const overlay = document.createElement('div');
     overlay.className = 'alert-overlay';
     
-    // Create alert
     const alert = document.createElement('div');
     alert.className = 'custom-alert';
     alert.innerHTML = `
@@ -399,7 +406,6 @@ function showCustomAlert(title, message) {
     document.body.appendChild(overlay);
     document.body.appendChild(alert);
     
-    // Show with animation
     setTimeout(() => {
         overlay.classList.add('show');
         alert.classList.add('show');
@@ -440,30 +446,17 @@ function showNotification(message) {
     `;
     notification.textContent = message;
     
-    // Add animation styles
     if (!document.getElementById('notification-styles')) {
         const style = document.createElement('style');
         style.id = 'notification-styles';
         style.textContent = `
             @keyframes slideInRight {
-                from {
-                    transform: translateX(400px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
             }
             @keyframes slideOutRight {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(400px);
-                    opacity: 0;
-                }
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
             }
         `;
         document.head.appendChild(style);
