@@ -1,4 +1,4 @@
-const CACHE_NAME = 'florytix-v4';
+const CACHE_NAME = 'florytix-v5';
 
 const relativeUrls = [
   'index.html',
