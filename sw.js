@@ -1,5 +1,6 @@
-const CACHE_NAME = 'florytix-v2';
-const urlsToCache = [
+const CACHE_NAME = 'florytix-v3';
+
+const relativeUrls = [
   'index.html',
   'shop.html',
   'cart.html',
@@ -14,27 +15,39 @@ const urlsToCache = [
 // Install Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache).catch((error) => {
-          console.log('Cache addAll failed, adding files individually:', error);
-          // If addAll fails, try adding files one by one
-          return Promise.all(
-            urlsToCache.map((url) => {
-              return fetch(url)
-                .then((response) => {
-                  if (response.ok) {
-                    return cache.put(url, response);
-                  }
-                })
-                .catch((err) => {
-                  console.log(`Failed to cache ${url}:`, err);
-                });
-            })
-          );
-        });
-      })
+    (async () => {
+      // Create Request objects which will properly resolve relative URLs
+      // relative to the service worker's location
+      const requestsToCache = relativeUrls.map(url => new Request(url));
+      
+      const cache = await caches.open(CACHE_NAME);
+      console.log('Opened cache');
+      console.log('Caching URLs:', relativeUrls);
+      
+      try {
+        await cache.addAll(requestsToCache);
+        console.log('All files cached successfully');
+      } catch (error) {
+        console.log('Cache addAll failed, adding files individually:', error);
+        // If addAll fails, try adding files one by one
+        const results = await Promise.allSettled(
+          requestsToCache.map(async (request) => {
+            try {
+              const response = await fetch(request);
+              if (response.ok) {
+                await cache.put(request, response);
+                console.log(`Successfully cached: ${request.url}`);
+              } else {
+                console.log(`Failed to cache ${request.url}: status ${response.status}`);
+              }
+            } catch (err) {
+              console.log(`Failed to cache ${request.url}:`, err);
+            }
+          })
+        );
+        console.log('Individual cache results:', results);
+      }
+    })()
   );
   // Force the waiting service worker to become the active service worker
   self.skipWaiting();
@@ -84,7 +97,7 @@ self.addEventListener('fetch', (event) => {
           console.log('Fetch failed:', error);
           // If fetch fails and it's a navigation request, return cached index.html
           if (event.request.mode === 'navigate') {
-            return caches.match('index.html');
+            return caches.match('index.html') || caches.match(new Request('index.html'));
           }
           throw error;
         });
