@@ -1,14 +1,14 @@
 const CACHE_NAME = 'florytix-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/shop.html',
-  '/cart.html',
-  '/contact.html',
-  '/styles.css',
-  '/script.js',
-  '/logo.png',
-  '/manifest.json',
+  './',
+  './index.html',
+  './shop.html',
+  './cart.html',
+  './contact.html',
+  './styles.css',
+  './script.js',
+  './logo.png',
+  './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
@@ -18,9 +18,27 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch((error) => {
+          console.log('Cache addAll failed, adding files individually:', error);
+          // If addAll fails, try adding files one by one
+          return Promise.all(
+            urlsToCache.map((url) => {
+              return fetch(url)
+                .then((response) => {
+                  if (response.ok) {
+                    return cache.put(url, response);
+                  }
+                })
+                .catch((err) => {
+                  console.log(`Failed to cache ${url}:`, err);
+                });
+            })
+          );
+        });
       })
   );
+  // Force the waiting service worker to become the active service worker
+  self.skipWaiting();
 });
 
 // Fetch from cache
@@ -68,4 +86,6 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Take control of all pages immediately
+  return self.clients.claim();
 });
