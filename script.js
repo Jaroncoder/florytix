@@ -1,14 +1,24 @@
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
+        // Use relative path to work with both user pages and project pages on GitHub Pages
+        navigator.serviceWorker.register('sw.js')
             .then((registration) => {
                 console.log('Service Worker registered successfully:', registration.scope);
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    console.log('New service worker found');
+                });
             })
             .catch((error) => {
-                console.log('Service Worker registration failed:', error);
+                console.error('Service Worker registration failed:', error);
             });
     });
+    
+    // Check if service worker is already controlling the page
+    if (navigator.serviceWorker.controller) {
+        console.log('Service Worker is controlling this page');
+    }
 }
 
 // Install PWA prompt

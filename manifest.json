@@ -2,7 +2,8 @@
   "name": "Florytix - Premium Flower Brand",
   "short_name": "Florytix",
   "description": "Your premium destination for fresh, beautiful flowers delivered with care",
-  "start_url": "/",
+  "start_url": "index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#FFF5F7",
   "theme_color": "#FF1493",
@@ -12,19 +13,19 @@
       "src": "icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["shopping", "lifestyle"]

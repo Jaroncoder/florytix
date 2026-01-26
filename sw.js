@@ -1,14 +1,13 @@
-const CACHE_NAME = 'florytix-v1';
+const CACHE_NAME = 'florytix-v2';
 const urlsToCache = [
-  './',
-  './index.html',
-  './shop.html',
-  './cart.html',
-  './contact.html',
-  './styles.css',
-  './script.js',
-  './logo.png',
-  './manifest.json',
+  'index.html',
+  'shop.html',
+  'cart.html',
+  'contact.html',
+  'styles.css',
+  'script.js',
+  'logo.png',
+  'manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
@@ -43,6 +42,11 @@ self.addEventListener('install', (event) => {
 
 // Fetch from cache
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -50,24 +54,40 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           return response;
         }
+        
+        // Fetch from network
         return fetch(event.request).then(
           (response) => {
             // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
 
-            // Clone the response
+            // Clone the response for caching
             const responseToCache = response.clone();
 
+            // Cache the response (only same-origin or explicitly listed URLs)
             caches.open(CACHE_NAME)
               .then((cache) => {
-                cache.put(event.request, responseToCache);
+                // Only cache if it's a basic response (same-origin) or in our cache list
+                if (response.type === 'basic' || urlsToCache.includes(event.request.url)) {
+                  cache.put(event.request, responseToCache);
+                }
+              })
+              .catch((err) => {
+                console.log('Cache put failed:', err);
               });
 
             return response;
           }
-        );
+        ).catch((error) => {
+          console.log('Fetch failed:', error);
+          // If fetch fails and it's a navigation request, return cached index.html
+          if (event.request.mode === 'navigate') {
+            return caches.match('index.html');
+          }
+          throw error;
+        });
       })
   );
 });
